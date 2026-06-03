@@ -1,9 +1,9 @@
-﻿from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request
 from app.database import save_email  # adjust path if needed
 
 app = FastAPI()
 
-@app.post("/api/email/webhook")
+@app.post("/webhook/email")  # <-- changed from /api/email/webhook
 async def email_webhook(req: Request):
     data = await req.json()
     save_email(
