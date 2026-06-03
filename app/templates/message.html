@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ message.subject }} - MAILERGG{% endblock %}
+{% block body %}
+<header class="topbar">
+  <a class="icon-link" href="/inbox" aria-label="Back" title="Back">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18 9 12l6-6"/></svg>
+  </a>
+  <form method="post" action="/messages/{{ message.id }}/read">
+    <button class="icon-link as-button" aria-label="Mark read" title="Mark read">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 12 5 5L20 6"/></svg>
+    </button>
+  </form>
+</header>
+<article class="reader">
+  <div class="reader-meta">
+    <span>{{ message.sender_email }}</span>
+    <time>{{ message.received_at[:16].replace("T", " ") }}</time>
+  </div>
+  <h1>{{ message.subject }}</h1>
+  <pre>{{ message.body }}</pre>
+</article>
+{% endblock %}

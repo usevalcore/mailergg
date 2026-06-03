@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}MAILERGG{% endblock %}
+{% block body %}
+<section class="login-wrap">
+  <div class="brand">
+    <h1>MAILERGG</h1>
+    <p>Your inbox, simplified</p>
+  </div>
+  <form class="login-form" method="post" action="/login" data-auth-form>
+    <label>
+      <span>Email</span>
+      <input name="email" type="email" autocomplete="email" required autofocus>
+    </label>
+    <label>
+      <span>Password</span>
+      <input name="password" type="password" autocomplete="current-password" required>
+    </label>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <button class="auth-button" type="submit" data-auth-button>
+      <span class="button-text">Sign in</span>
+      <span class="button-busy"><i aria-hidden="true"></i>Authenticating<span class="dots"></span></span>
+    </button>
+    <div class="auth-trace" aria-hidden="true"><span></span></div>
+  </form>
+</section>
+<div class="auth-overlay" data-auth-overlay aria-hidden="true">
+  <div class="auth-orbit" aria-hidden="true"></div>
+  <p data-auth-status>Authenticating...</p>
+</div>
+<script>
+  const form = document.querySelector("[data-auth-form]");
+  const button = document.querySelector("[data-auth-button]");
+  const overlay = document.querySelector("[data-auth-overlay]");
+  const statusText = document.querySelector("[data-auth-status]");
+  form?.addEventListener("submit", (event) => {
+    if (form.dataset.ready === "true") return;
+    event.preventDefault();
+    button?.classList.add("is-busy");
+    overlay?.classList.add("visible");
+    setTimeout(() => {
+      if (statusText) statusText.textContent = "Verifying session...";
+    }, 430);
+    setTimeout(() => {
+      form.dataset.ready = "true";
+      form.submit();
+    }, 920);
+  });
+</script>
+{% endblock %}

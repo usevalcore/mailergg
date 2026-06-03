@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}MAILERGG{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <meta name="theme-color" content="#050505">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <main class="shell">
+    {% block body %}{% endblock %}
+  </main>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/static/service-worker.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Inbox - MAILERGG{% endblock %}
+{% block body %}
+<header class="topbar">
+  <a class="wordmark" href="/inbox">MAILERGG</a>
+  <a class="icon-link" href="/settings" aria-label="Settings" title="Settings">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5A3.5 3.5 0 1 0 12 8a3.5 3.5 0 0 0 0 7.5Z"/><path d="M19.4 13.5a7.8 7.8 0 0 0 .1-1.5 7.8 7.8 0 0 0-.1-1.5l2-1.5-2-3.4-2.4 1a7.3 7.3 0 0 0-2.6-1.5L14 2.5h-4l-.4 2.6a7.3 7.3 0 0 0-2.6 1.5l-2.4-1-2 3.4 2 1.5A7.8 7.8 0 0 0 4.5 12c0 .5 0 1 .1 1.5l-2 1.5 2 3.4 2.4-1a7.3 7.3 0 0 0 2.6 1.5l.4 2.6h4l.4-2.6a7.3 7.3 0 0 0 2.6-1.5l2.4 1 2-3.4-2-1.5Z"/></svg>
+  </a>
+</header>
+<section class="inbox-head">
+  <h1>{{ user.display_name }}</h1>
+  <p>{{ messages|length }} {{ folder }} message{% if messages|length != 1 %}s{% endif %}</p>
+</section>
+<section class="mail-workspace">
+  <aside class="folder-rail" aria-label="Folders">
+    <a class="{% if folder == 'inbox' %}active{% endif %}" href="/inbox?folder=inbox">
+      <span>Inbox</span><em>{{ folder_counts.inbox }}</em>
+    </a>
+    <a class="{% if folder == 'trash' %}active{% endif %}" href="/inbox?folder=trash">
+      <span>Trash</span><em>{{ folder_counts.trash }}</em>
+    </a>
+    {% if folder == 'trash' and folder_counts.trash %}
+    <form method="post" action="/trash/empty">
+      <button class="secondary-button rail-action" type="submit">Empty</button>
+    </form>
+    {% endif %}
+  </aside>
+  <section class="list-pane">
+    <form class="search-form" method="get" action="/inbox">
+      <input type="hidden" name="folder" value="{{ folder }}">
+      <input name="q" value="{{ q }}" placeholder="Search mail" autocomplete="off">
+    </form>
+    {% for item in messages %}
+    <a class="message-row {% if not item.read_status %}unread{% endif %} {% if message and message.id == item.id %}active{% endif %}" href="/inbox/messages/{{ item.id }}?folder={{ folder }}{% if q %}&q={{ q }}{% endif %}">
+      <span class="sender">{{ item.sender_email }}</span>
+      <span class="subject">{{ item.subject }}</span>
+      <time>{{ item.received_at[:16].replace("T", " ") }}</time>
+    </a>
+    {% else %}
+    <div class="empty compact">
+      <h2>No mail</h2>
+      <p>{% if folder == 'trash' %}Removed messages will appear here.{% else %}New messages sent to your address will appear here.{% endif %}</p>
+    </div>
+    {% endfor %}
+  </section>
+  <article class="inline-reader {% if message %}show{% endif %}">
+    {% if message %}
+    <div class="reader-meta">
+      <span>{{ message.sender_email }}</span>
+      <time>{{ message.received_at[:16].replace("T", " ") }}</time>
+    </div>
+    <h2>{{ message.subject }}</h2>
+    <div class="reader-actions">
+      {% if folder == 'trash' %}
+      <form method="post" action="/messages/{{ message.id }}/restore">
+        <button class="secondary-button" type="submit">Restore</button>
+      </form>
+      {% else %}
+      <form method="post" action="/messages/{{ message.id }}/trash">
+        <button class="secondary-button" type="submit">Delete</button>
+      </form>
+      {% endif %}
+    </div>
+    {% if attachments %}
+    <div class="attachments">
+      {% for attachment in attachments %}
+      <a href="/attachments/{{ attachment.id }}">{{ attachment.original_filename }} <span>{{ attachment.size_bytes }} bytes</span></a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <pre>{{ message.body }}</pre>
+    {% else %}
+    <p class="quiet">Select a message.</p>
+    {% endif %}
+  </article>
+</section>
+{% endblock %}

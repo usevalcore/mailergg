@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Mail - MAILERGG{% endblock %}
+{% block body %}
+<header class="topbar">
+  <a class="wordmark" href="/viewer">MAILERGG</a>
+  <form method="post" action="/logout">
+    <button class="icon-link as-button" aria-label="Logout" title="Logout">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2"/><path d="M15 17l5-5-5-5"/><path d="M20 12H8"/></svg>
+    </button>
+  </form>
+</header>
+<section class="viewer">
+  <aside class="people">
+    <h1>People</h1>
+    {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/viewer/users" class="create-person">
+      <label>
+        <span>Email</span>
+        <input name="email" type="email" autocomplete="off" required>
+      </label>
+      <label>
+        <span>Password</span>
+        <input name="password" type="password" minlength="12" autocomplete="new-password" required>
+      </label>
+      <label>
+        <span>Display name</span>
+        <input name="display_name" autocomplete="off">
+      </label>
+      <button type="submit">Create</button>
+    </form>
+    <form class="jump-form" data-jump-form>
+      <label>
+        <span>Choose</span>
+        <select data-user-select>
+          <option value="/viewer">Select</option>
+          {% for person in users %}
+          <option value="/viewer/users/{{ person.id }}" {% if selected_user and selected_user.id == person.id %}selected{% endif %}>{{ person.display_name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </form>
+    <div class="person-list">
+      {% for person in users %}
+      <a class="person-row {% if selected_user and selected_user.id == person.id %}active{% endif %}" href="/viewer/users/{{ person.id }}">
+        <span>{{ person.display_name }}</span>
+        <small>{{ person.email }}</small>
+        <em>{{ person.message_count }}</em>
+      </a>
+      {% else %}
+      <p class="quiet">No people yet.</p>
+      {% endfor %}
+    </div>
+  </aside>
+  <section class="mail-pane">
+    {% if selected_user %}
+    <div class="pane-head">
+      <div>
+        <h2>{{ selected_user.display_name }}</h2>
+        <p>{{ selected_user.email }}</p>
+      </div>
+      <span>{{ selected_user.status }}</span>
+    </div>
+    <div class="control-strip">
+      <form method="post" action="/viewer/users/{{ selected_user.id }}/password" class="inline-control">
+        <label>
+          <span>New password</span>
+          <input name="password" type="password" minlength="12" autocomplete="new-password" required>
+        </label>
+        <button type="submit">Reset</button>
+      </form>
+      <form method="post" action="/viewer/users/{{ selected_user.id }}/{% if selected_user.status == 'locked' %}unlock{% else %}lock{% endif %}">
+        <button class="secondary-button" type="submit">{% if selected_user.status == 'locked' %}Unlock{% else %}Lock{% endif %}</button>
+      </form>
+      <form method="post" action="/viewer/users/{{ selected_user.id }}/delete" class="inline-control danger-control">
+        <label>
+          <span>PIN</span>
+          <input name="pin" inputmode="numeric" pattern="[0-9]*" autocomplete="off" required>
+        </label>
+        <button class="danger-button" type="submit">Remove</button>
+      </form>
+    </div>
+    <nav class="folder-tabs viewer-tabs" aria-label="Folders">
+      <a class="{% if folder == 'inbox' %}active{% endif %}" href="/viewer/users/{{ selected_user.id }}?folder=inbox">Inbox</a>
+      <a class="{% if folder == 'trash' %}active{% endif %}" href="/viewer/users/{{ selected_user.id }}?folder=trash">Trash</a>
+    </nav>
+    {% if folder == 'trash' and messages %}
+    <form method="post" action="/viewer/users/{{ selected_user.id }}/trash/empty" class="viewer-search">
+      <button class="secondary-button" type="submit">Empty Trash</button>
+    </form>
+    {% endif %}
+    <form class="search-form viewer-search" method="get" action="/viewer/users/{{ selected_user.id }}">
+      <input type="hidden" name="folder" value="{{ folder }}">
+      <input name="q" value="{{ q }}" placeholder="Search mail" autocomplete="off">
+    </form>
+    <div class="viewer-grid">
+      <div class="viewer-list">
+        {% for item in messages %}
+        <a class="message-row {% if message and message.id == item.id %}active{% endif %}" href="/viewer/users/{{ selected_user.id }}/messages/{{ item.id }}?folder={{ folder }}">
+          <span class="sender">{{ item.sender_email }}</span>
+          <span class="subject">{{ item.subject }}</span>
+          <time>{{ item.received_at[:16].replace("T", " ") }}</time>
+        </a>
+        {% else %}
+        <div class="empty compact">
+          <h2>No mail</h2>
+          <p>New messages for this address will appear here.</p>
+        </div>
+        {% endfor %}
+      </div>
+      <article class="viewer-reader">
+        {% if message %}
+        <div class="reader-meta">
+          <span>{{ message.sender_email }}</span>
+          <time>{{ message.received_at[:16].replace("T", " ") }}</time>
+        </div>
+        <h2>{{ message.subject }}</h2>
+        {% if attachments %}
+        <div class="attachments">
+          {% for attachment in attachments %}
+          <a href="/viewer/attachments/{{ attachment.id }}">{{ attachment.original_filename }} <span>{{ attachment.size_bytes }} bytes</span></a>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <pre>{{ message.body }}</pre>
+        {% else %}
+        <p class="quiet">Select a message.</p>
+        {% endif %}
+      </article>
+    </div>
+    {% else %}
+    <div class="empty">
+      <h2>Select a person</h2>
+      <p>Mail appears after a person is selected.</p>
+    </div>
+    {% endif %}
+  </section>
+</section>
+<script>
+  const select = document.querySelector("[data-user-select]");
+  select?.addEventListener("change", () => {
+    if (select.value) window.location.href = select.value;
+  });
+</script>
+{% endblock %}

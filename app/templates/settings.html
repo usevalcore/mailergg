@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Settings - MAILERGG{% endblock %}
+{% block body %}
+<header class="topbar">
+  <a class="icon-link" href="/inbox" aria-label="Back" title="Back">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18 9 12l6-6"/></svg>
+  </a>
+  <form method="post" action="/logout">
+    <button class="icon-link as-button" aria-label="Logout" title="Logout">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2"/><path d="M15 17l5-5-5-5"/><path d="M20 12H8"/></svg>
+    </button>
+  </form>
+</header>
+<section class="settings">
+  <h1>Settings</h1>
+  <div class="account-key">
+    <span>Account key</span>
+    <strong>{{ user.account_key }}</strong>
+  </div>
+  {% if notice %}<p class="notice">{{ notice }}</p>{% endif %}
+  {% if error %}<p class="error">{{ error }}</p>{% endif %}
+  <form method="post" action="/settings/profile" class="panel-form">
+    <label>
+      <span>Display name</span>
+      <input name="display_name" value="{{ user.display_name }}" required>
+    </label>
+    <button type="submit">Save</button>
+  </form>
+  <form method="post" action="/settings/password" class="panel-form">
+    <label>
+      <span>Current password</span>
+      <input name="current_password" type="password" autocomplete="current-password" required>
+    </label>
+    <label>
+      <span>New password</span>
+      <input name="new_password" type="password" autocomplete="new-password" minlength="12" required>
+    </label>
+    <button type="submit">Change</button>
+  </form>
+</section>
+{% endblock %}

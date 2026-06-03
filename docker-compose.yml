@@ -1,0 +1,24 @@
+services:
+  mailergg:
+    build: .
+    container_name: mailergg
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_PATH: ${DATABASE_PATH:-/app/data/mailergg.sqlite}
+      ATTACHMENT_DIR: ${ATTACHMENT_DIR:-/app/data/attachments}
+      MAX_ATTACHMENT_BYTES: ${MAX_ATTACHMENT_BYTES:-10485760}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8000}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-cookpo222@gmail.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in your shell or .env}
+      ADMIN_DISPLAY_NAME: ${ADMIN_DISPLAY_NAME:-Controller}
+      FIRST_USER_EMAIL: ${FIRST_USER_EMAIL:-jackmiller2@mailergg.me}
+      FIRST_USER_PASSWORD: ${FIRST_USER_PASSWORD:?Set FIRST_USER_PASSWORD in your shell or .env}
+      FIRST_USER_DISPLAY_NAME: ${FIRST_USER_DISPLAY_NAME:-Jack Miller}
+    volumes:
+      - mailergg_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  mailergg_data:
