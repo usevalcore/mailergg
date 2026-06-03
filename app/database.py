@@ -2,9 +2,9 @@ import os
 import sqlite3
 from pathlib import Path
 from typing import Iterator
+from datetime import datetime
 
 from .security import hash_password, new_account_key
-
 
 DATABASE_PATH = os.getenv("DATABASE_PATH", "data/mailergg.sqlite")
 DEFAULT_ADMIN_EMAIL = "cookpo222@gmail.com"
@@ -158,6 +158,7 @@ def init_db() -> None:
             );
             """
         )
+
         db.execute("DROP TABLE IF EXISTS message_search")
         db.execute(
             """
@@ -168,24 +169,26 @@ def init_db() -> None:
             )
             """
         )
+
         columns = {row[1] for row in db.execute("PRAGMA table_info(messages)").fetchall()}
         if "folder" not in columns:
             db.execute("ALTER TABLE messages ADD COLUMN folder TEXT NOT NULL DEFAULT 'inbox'")
         db.execute("UPDATE messages SET folder = 'inbox' WHERE folder IS NULL OR folder NOT IN ('inbox', 'trash')")
+
         user_columns = {row[1] for row in db.execute("PRAGMA table_info(users)").fetchall()}
         if "account_key" not in user_columns:
             db.execute("ALTER TABLE users ADD COLUMN account_key TEXT")
         for row in db.execute("SELECT id FROM users WHERE account_key IS NULL OR account_key = ''").fetchall():
             db.execute("UPDATE users SET account_key = ? WHERE id = ?", (unique_account_key(db), row[0]))
         db.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_account_key ON users(account_key)")
+
         db.execute(
             """
             INSERT INTO message_search(rowid, subject, sender_email, body)
             SELECT id, subject, sender_email, body FROM messages
             """
         )
-        # Existing volumes may have the old audit_logs table tied to mailbox users.
-        # Recreate it without making admins mailbox entities.
+
         db.executescript(
             """
             PRAGMA foreign_keys = OFF;
@@ -203,6 +206,7 @@ def init_db() -> None:
             PRAGMA foreign_keys = ON;
             """
         )
+
         db.execute(
             """
             INSERT INTO admins (email, password_hash, display_name)
@@ -217,6 +221,7 @@ def init_db() -> None:
                 required_admin["display_name"],
             ),
         )
+
         db.execute(
             """
             INSERT INTO users (email, password_hash, role, status, display_name, account_key)
@@ -235,6 +240,7 @@ def init_db() -> None:
                 unique_account_key(db),
             ),
         )
+
         db.execute(
             """
             DELETE FROM users
@@ -242,28 +248,28 @@ def init_db() -> None:
                OR email IN (SELECT email FROM admins)
             """
         )
-        db.execute(
-            """
-            UPDATE sessions
-            SET revoked_at = CURRENT_TIMESTAMP
-            WHERE user_id = (SELECT id FROM users WHERE email = ?)
-              AND revoked_at IS NULL
-            """,
-            (required_user["email"],),
-        )
-        required_user_id = db.execute("SELECT id FROM users WHERE email = ?", (required_user["email"],)).fetchone()[0]
-        for folder_name in ("inbox", "trash"):
-            db.execute(
-                "INSERT OR IGNORE INTO user_folders (user_id, name) VALUES (?, ?)",
-                (required_user_id, folder_name),
-            )
-        db.execute(
-            """
-            UPDATE admin_sessions
-            SET revoked_at = CURRENT_TIMESTAMP
-            WHERE admin_id = (SELECT id FROM admins WHERE email = ?)
-              AND revoked_at IS NULL
-            """,
-            (required_admin["email"],),
-        )
+
         db.commit()
+
+
+# ============================
+# NEW: catch-all email helpers
+# ============================
+
+def get_or_create_user(db, email: str):
+    email = email.lower().strip()
+
+    user = db.execute(
+        "SELECT id FROM users WHERE email = ?",
+        (email,)
+    ).fetchone()
+
+    if user:
+        return user["id"]
+
+    # auto-create inbox user
+    display_name = email.split("@")[0]
+
+    db.execute(
+        """
+        INSERT
