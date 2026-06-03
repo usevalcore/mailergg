@@ -1,19 +1,23 @@
 from fastapi import FastAPI, Request
-from app.database import save_email  # adjust path if needed
+from app.database import get_db, save_email
 
 app = FastAPI()
 
-@app.post("/webhook/email")  # <-- changed from /api/email/webhook
+
+@app.post("/webhook/email")
 async def email_webhook(req: Request):
     data = await req.json()
+
+    print("🔥 EMAIL RECEIVED:", data)
+
+    db = next(get_db())
+
     save_email(
+        db=db,
         sender=data["from"],
         recipient=data["to"],
         subject=data["subject"],
         body=data["body"]
     )
-    return {"ok": True}
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    return {"ok": True}
